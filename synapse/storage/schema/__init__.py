@@ -149,8 +149,8 @@ Changes in SCHEMA_VERSION = 87
 
 
 SCHEMA_COMPAT_VERSION = (
-    # Added displayname and avatar_url columns to presence_stream
-    86
+    # Transitive links are no longer written to `event_auth_chain_links`
+    84
 )
 """Limit on how far the synapse codebase can be rolled back without breaking db compat
 
