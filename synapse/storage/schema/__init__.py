@@ -141,10 +141,10 @@ Changes in SCHEMA_VERSION = 85
     - Add a column `suspended` to the `users` table
 
 Changes in SCHEMA_VERSION = 86
-    - Add a column `authenticated` to the tables `local_media_repository` and `remote_media_cache`
+    - Added displayname and avatar_url columns to presence_stream
 
 Changes in SCHEMA_VERSION = 87
-    - Added displayname and avatar_url columns to presence_stream
+    - Add a column `authenticated` to the tables `local_media_repository` and `remote_media_cache`
 """
 
 
