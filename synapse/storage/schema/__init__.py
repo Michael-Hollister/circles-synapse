@@ -140,7 +140,7 @@ Changes in SCHEMA_VERSION = 84
 Changes in SCHEMA_VERSION = 85
     - Add a column `suspended` to the `users` table
 
-Changes in SCHEMA_VERSION = 85
+Changes in SCHEMA_VERSION = 86
     - Added displayname and avatar_url columns to presence_stream
 """
 
