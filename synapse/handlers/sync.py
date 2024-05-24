@@ -2261,10 +2261,8 @@ class SyncHandler:
 
         since_token = sync_result_builder.since_token
         presence_key = None
-        include_offline = False
         if since_token and not sync_result_builder.full_state:
             presence_key = since_token.presence_key
-            include_offline = True
 
         presence, presence_key = await presence_source.get_new_events(
             user=user,
