@@ -384,14 +384,19 @@ class ServerConfig(Config):
         # Whether to internally track presence, requires that presence is enabled,
         self.track_presence = self.presence_enabled and presence_enabled != "untracked"
 
+        # Determines if presence results for offline users are included on initial/full sync
+        self.presence_include_offline_users_on_sync = presence_config.get(
+            "include_offline_users_on_sync", False
+        )
+
         # Disabling server-side presence tracking
-        self.sync_presence_tracking = presence_config.get(
-            "sync_presence_tracking", True
+        self.presence_local_activity_tracking = presence_config.get(
+            "local_activity_tracking", True
         )
 
         # Disabling federation presence tracking
-        self.federation_presence_tracking = presence_config.get(
-            "federation_presence_tracking", True
+        self.presence_remote_activity_tracking = presence_config.get(
+            "remote_activity_tracking", True
         )
 
         # Custom presence router module
@@ -404,12 +409,6 @@ class ServerConfig(Config):
                 self.presence_router_module_class,
                 self.presence_router_config,
             ) = load_module(presence_router_config, ("presence", "presence_router"))
-
-        # whether to enable the media repository endpoints. This should be set
-        # to false if the media repository is running as a separate endpoint;
-        # doing so ensures that we will not run cache cleanup jobs on the
-        # master, potentially causing inconsistency.
-        self.enable_media_repo = config.get("enable_media_repo", True)
 
         # Whether to require authentication to retrieve profile data (avatars,
         # display names) of other users through the client API.

@@ -1,11 +1,6 @@
 --
 -- This file is licensed under the Affero General Public License (AGPL) version 3.
 --
--- Copyright (C) 2023 New Vector, Ltd
---
---
--- This file is licensed under the Affero General Public License (AGPL) version 3.
---
 -- Copyright (C) 2024 New Vector, Ltd
 --
 -- This program is free software: you can redistribute it and/or modify
@@ -16,5 +11,5 @@
 -- See the GNU Affero General Public License for more details:
 -- <https://www.gnu.org/licenses/agpl-3.0.html>.
 
-ALTER TABLE presence_stream ADD COLUMN displayname TEXT;
-ALTER TABLE presence_stream ADD COLUMN avatar_url TEXT;
+INSERT INTO background_updates (ordering, update_name, progress_json) VALUES
+    (8504, 'cleanup_device_federation_outbox', '{}');

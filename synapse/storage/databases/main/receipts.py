@@ -44,13 +44,8 @@ from synapse.storage.database import (
     LoggingDatabaseConnection,
     LoggingTransaction,
 )
-from synapse.storage.engines import PostgresEngine
 from synapse.storage.engines._base import IsolationLevel
-from synapse.storage.util.id_generators import (
-    AbstractStreamIdGenerator,
-    MultiWriterIdGenerator,
-    StreamIdGenerator,
-)
+from synapse.storage.util.id_generators import MultiWriterIdGenerator
 from synapse.types import (
     JsonDict,
     JsonMapping,
@@ -78,37 +73,22 @@ class ReceiptsWorkerStore(SQLBaseStore):
 
         # In the worker store this is an ID tracker which we overwrite in the non-worker
         # class below that is used on the main process.
-        self._receipts_id_gen: AbstractStreamIdGenerator
+        self._receipts_id_gen: MultiWriterIdGenerator
 
-        if isinstance(database.engine, PostgresEngine):
-            self._can_write_to_receipts = (
-                self._instance_name in hs.config.worker.writers.receipts
-            )
+        self._can_write_to_receipts = (
+            self._instance_name in hs.config.worker.writers.receipts
+        )
 
-            self._receipts_id_gen = MultiWriterIdGenerator(
-                db_conn=db_conn,
-                db=database,
-                notifier=hs.get_replication_notifier(),
-                stream_name="receipts",
-                instance_name=self._instance_name,
-                tables=[("receipts_linearized", "instance_name", "stream_id")],
-                sequence_name="receipts_sequence",
-                writers=hs.config.worker.writers.receipts,
-            )
-        else:
-            self._can_write_to_receipts = True
-
-            # Multiple writers are not supported for SQLite.
-            #
-            # We shouldn't be running in worker mode with SQLite, but its useful
-            # to support it for unit tests.
-            self._receipts_id_gen = StreamIdGenerator(
-                db_conn,
-                hs.get_replication_notifier(),
-                "receipts_linearized",
-                "stream_id",
-                is_writer=hs.get_instance_name() in hs.config.worker.writers.receipts,
-            )
+        self._receipts_id_gen = MultiWriterIdGenerator(
+            db_conn=db_conn,
+            db=database,
+            notifier=hs.get_replication_notifier(),
+            stream_name="receipts",
+            instance_name=self._instance_name,
+            tables=[("receipts_linearized", "instance_name", "stream_id")],
+            sequence_name="receipts_sequence",
+            writers=hs.config.worker.writers.receipts,
+        )
 
         super().__init__(database, db_conn, hs)
 
@@ -152,6 +132,9 @@ class ReceiptsWorkerStore(SQLBaseStore):
 
     def get_receipt_stream_id_for_instance(self, instance_name: str) -> int:
         return self._receipts_id_gen.get_current_token_for_writer(instance_name)
+
+    def get_receipts_stream_id_gen(self) -> MultiWriterIdGenerator:
+        return self._receipts_id_gen
 
     def get_last_unthreaded_receipt_for_user_txn(
         self,

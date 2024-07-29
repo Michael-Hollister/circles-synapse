@@ -148,6 +148,10 @@ class EventFederationWorkerStore(SignatureWorkerStore, EventsWorkerStore, SQLBas
             500000, "_event_auth_cache", size_callback=len
         )
 
+        # Flag used by unit tests to disable fallback when there is no chain cover
+        # index.
+        self.tests_allow_no_chain_cover_index = True
+
         self._clock.looping_call(self._get_stats_for_federation_staging, 30 * 1000)
 
         if isinstance(self.database_engine, PostgresEngine):
@@ -220,8 +224,10 @@ class EventFederationWorkerStore(SignatureWorkerStore, EventsWorkerStore, SQLBas
                 )
             except _NoChainCoverIndex:
                 # For whatever reason we don't actually have a chain cover index
-                # for the events in question, so we fall back to the old method.
-                pass
+                # for the events in question, so we fall back to the old method
+                # (except in tests)
+                if not self.tests_allow_no_chain_cover_index:
+                    raise
 
         return await self.db_pool.runInteraction(
             "get_auth_chain_ids",
@@ -271,7 +277,7 @@ class EventFederationWorkerStore(SignatureWorkerStore, EventsWorkerStore, SQLBas
         if events_missing_chain_info:
             # This can happen due to e.g. downgrade/upgrade of the server. We
             # raise an exception and fall back to the previous algorithm.
-            logger.info(
+            logger.error(
                 "Unexpectedly found that events don't have chain IDs in room %s: %s",
                 room_id,
                 events_missing_chain_info,
@@ -482,8 +488,10 @@ class EventFederationWorkerStore(SignatureWorkerStore, EventsWorkerStore, SQLBas
                 )
             except _NoChainCoverIndex:
                 # For whatever reason we don't actually have a chain cover index
-                # for the events in question, so we fall back to the old method.
-                pass
+                # for the events in question, so we fall back to the old method
+                # (except in tests)
+                if not self.tests_allow_no_chain_cover_index:
+                    raise
 
         return await self.db_pool.runInteraction(
             "get_auth_chain_difference",
@@ -710,7 +718,7 @@ class EventFederationWorkerStore(SignatureWorkerStore, EventsWorkerStore, SQLBas
         if events_missing_chain_info - event_to_auth_ids.keys():
             # Uh oh, we somehow haven't correctly done the chain cover index,
             # bail and fall back to the old method.
-            logger.info(
+            logger.error(
                 "Unexpectedly found that events don't have chain IDs in room %s: %s",
                 room_id,
                 events_missing_chain_info - event_to_auth_ids.keys(),
@@ -1305,6 +1313,11 @@ class EventFederationWorkerStore(SignatureWorkerStore, EventsWorkerStore, SQLBas
         # We want to make the cache more effective, so we clamp to the last
         # change before the given ordering.
         last_change = self._events_stream_cache.get_max_pos_of_last_change(room_id)  # type: ignore[attr-defined]
+        if last_change is None:
+            # If the room isn't in the cache we know that the last change was
+            # somewhere before the earliest known position of the cache, so we
+            # can clamp to that.
+            last_change = self._events_stream_cache.get_earliest_known_position()  # type: ignore[attr-defined]
 
         # We don't always have a full stream_to_exterm_id table, e.g. after
         # the upgrade that introduced it, so we make sure we never ask for a

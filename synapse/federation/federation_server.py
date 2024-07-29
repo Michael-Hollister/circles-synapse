@@ -674,7 +674,7 @@ class FederationServer(FederationBase):
         # This is in addition to the HS-level rate limiting applied by
         # BaseFederationServlet.
         # type-ignore: mypy doesn't seem able to deduce the type of the limiter(!?)
-        await self._room_member_handler._join_rate_per_room_limiter.ratelimit(  # type: ignore[has-type]
+        await self._room_member_handler._join_rate_per_room_limiter.ratelimit(
             requester=None,
             key=room_id,
             update=False,
@@ -717,7 +717,7 @@ class FederationServer(FederationBase):
             SynapseTags.SEND_JOIN_RESPONSE_IS_PARTIAL_STATE,
             caller_supports_partial_state,
         )
-        await self._room_member_handler._join_rate_per_room_limiter.ratelimit(  # type: ignore[has-type]
+        await self._room_member_handler._join_rate_per_room_limiter.ratelimit(
             requester=None,
             key=room_id,
             update=False,
@@ -1425,11 +1425,21 @@ class FederationHandlerRegistry:
         self._edu_type_to_instance[edu_type] = instance_names
 
     async def on_edu(self, edu_type: str, origin: str, content: dict) -> None:
+        """Passes an EDU to a registered handler if one exists
+
+        This potentially modifies the `content` dict for `m.presence` EDUs when
+        presence `remote_activity_tracking` is disabled.
+
+        Args:
+            edu_type: The type of the incoming EDU to process
+            origin: The server we received the event from
+            content: The content of the EDU
+        """
         if not self.config.server.track_presence and edu_type == EduTypes.PRESENCE:
             return
 
         if (
-            not self.config.server.federation_presence_tracking
+            not self.config.server.presence_remote_activity_tracking
             and edu_type == EduTypes.PRESENCE
         ):
             filtered_edus = []
