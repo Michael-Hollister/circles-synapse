@@ -11,5 +11,5 @@
 -- See the GNU Affero General Public License for more details:
 -- <https://www.gnu.org/licenses/agpl-3.0.html>.
 
--- ALTER TABLE presence_stream ADD COLUMN displayname TEXT;
--- ALTER TABLE presence_stream ADD COLUMN avatar_url TEXT;
+ALTER TABLE presence_stream ADD COLUMN displayname TEXT;
+ALTER TABLE presence_stream ADD COLUMN avatar_url TEXT;
